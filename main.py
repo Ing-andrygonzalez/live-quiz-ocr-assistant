@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
-import pyscreenshot as ImageGrab
+import subprocess
+from PIL import Image
 from google import genai
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -38,8 +39,21 @@ class QuizOverlay:
         self.root.update()
 
         try:
-            # Captura limpia compatible con Chromebook Linux
-            img = ImageGrab.grab(backend="scrot")
+            # Captura usando scrot directamente a un archivo temporal
+            screenshot_path = "/tmp/screenshot.png"
+            # Ocultamos brevemente la ventana del overlay para que no salga en la foto
+            self.root.withdraw()
+            self.root.update()
+            
+            # Tomar captura con scrot (ignorando errores de bordes)
+            subprocess.run(["scrot", "-z", screenshot_path], check=True)
+            
+            # Volver a mostrar la ventana
+            self.root.deiconify()
+            self.root.update()
+
+            # Abrir la imagen capturada
+            img = Image.open(screenshot_path)
             img.thumbnail((1024, 1024))
 
             self.result_label.config(text="⚡ Analizando...")
@@ -56,6 +70,7 @@ class QuizOverlay:
             self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
+            self.root.deiconify()
             self.result_label.config(text=f"⚠️ Error: {str(e)}")
 
 if __name__ == "__main__":
