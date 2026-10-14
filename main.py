@@ -35,24 +35,21 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="⚡ Procesando...")
+        self.result_label.config(text="⚡ Analizando...")
         self.root.update()
 
         try:
-            # Captura ultra rápida
             with mss() as sct:
                 monitor = sct.monitors[1]
                 sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-            # Reducir tamaño de imagen para velocidad máxima de subida
             img.thumbnail((1024, 1024))
 
-            prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, súper breve."
+            prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, de forma súper breve."
 
-            # Usar modelo ultra veloz
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=[img, prompt],
             )
 
