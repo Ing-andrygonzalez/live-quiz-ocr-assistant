@@ -40,7 +40,7 @@ class QuizOverlay:
 
         try:
             # Captura ultra rápida
-            with mss() as sct:
+            with mss.MSS() as sct:
                 monitor = sct.monitors[1]
                 sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
