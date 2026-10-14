@@ -1,10 +1,8 @@
 import os
 import tkinter as tk
-import pytesseract
 from PIL import Image
 from google import genai
 
-# Inicializar cliente de Google Gemini
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class QuizOverlay:
@@ -36,27 +34,22 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="🔍 Capturando y analizando...")
+        self.result_label.config(text="🔍 Analizando pantalla con visión IA...")
         self.root.update()
 
         try:
-            # Tomar captura de pantalla con scrot
+            # 1. Capturar pantalla con scrot
             os.system("scrot -f /tmp/screen_capture.png")
+            
+            # 2. Abrir la imagen capturada
             img = Image.open("/tmp/screen_capture.png")
 
-            # OCR: Extraer texto
-            text = pytesseract.image_to_string(img, lang="eng+spa").strip()
-
-            if not text or len(text) < 3:
-                self.result_label.config(text="❌ No se detectó texto claro.")
-                return
-
-            # Consulta a Gemini
-            prompt = f"Analiza esta pregunta de trivia u opción múltiple y dame ÚNICAMENTE la respuesta correcta de forma directa y concisa:\n\n{text}"
+            # 3. Enviar la imagen directamente a Gemini
+            prompt = "Lee la pregunta de trivia y las opciones en esta imagen. Responde ÚNICAMENTE con la opción de respuesta correcta, de forma breve y directa."
             
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=prompt,
+                contents=[img, prompt],
             )
 
             answer = response.text.strip()
