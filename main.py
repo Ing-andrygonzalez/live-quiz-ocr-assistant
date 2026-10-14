@@ -1,6 +1,5 @@
 import os
 import tkinter as tk
-import mss
 import pytesseract
 from PIL import Image
 from google import genai
@@ -37,27 +36,22 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="🔍 Analizando pantalla...")
+        self.result_label.config(text="🔍 Capturando y analizando...")
         self.root.update()
 
         try:
-            # Captura de pantalla completa usando el monitor 0 o 1
-            with mss.mss() as sct:
-                # Intentamos capturar el monitor principal
-                sct_img = sct.grab(sct.monitors[0])
-                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+            # Tomar captura de pantalla con scrot
+            os.system("scrot -f /tmp/screen_capture.png")
+            img = Image.open("/tmp/screen_capture.png")
 
-            # OCR: Extraer texto con Tesseract (usando solo 'eng' por compatibilidad)
-            text = pytesseract.image_to_string(img, lang="eng").strip()
-            
-            # Imprimir en la terminal para que veas qué leyó OCR
-            print(f"--- TEXTO DETECTADO POR OCR ---\n{text}\n------------------------------")
+            # OCR: Extraer texto
+            text = pytesseract.image_to_string(img, lang="eng+spa").strip()
 
             if not text or len(text) < 3:
-                self.result_label.config(text="❌ No se detectó texto. Revisa la terminal.")
+                self.result_label.config(text="❌ No se detectó texto claro.")
                 return
 
-            # Consulta a la IA de Gemini
+            # Consulta a Gemini
             prompt = f"Analiza esta pregunta de trivia u opción múltiple y dame ÚNICAMENTE la respuesta correcta de forma directa y concisa:\n\n{text}"
             
             response = client.models.generate_content(
@@ -69,8 +63,7 @@ class QuizOverlay:
             self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
-            print(f"Error detallado: {str(e)}")
-            self.result_label.config(text=f"⚠️ Error: Revisa la terminal")
+            self.result_label.config(text=f"⚠️ Error: {str(e)}")
 
 if __name__ == "__main__":
     root = tk.Tk()
