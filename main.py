@@ -45,16 +45,10 @@ class QuizOverlay:
         self.root.update() 
 
         try:
-            # Captura de pantalla de la región central
+            # Captura de TODA la pantalla en lugar de una región limitada
             with mss.mss() as sct:
                 monitor = sct.monitors[1]
-                region = {
-                    "top": int(monitor["height"] * 0.15),
-                    "left": int(monitor["width"] * 0.15),
-                    "width": int(monitor["width"] * 0.70),
-                    "height": int(monitor["height"] * 0.70)
-                }
-                sct_img = sct.grab(region)
+                sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
             # OCR: Extraer texto con Tesseract
