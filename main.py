@@ -42,7 +42,7 @@ class QuizOverlay:
 
     def process_screen(self):
         self.result_label.config(text="🔍 Leyendo pantalla y analizando...")
-        self.root.update()
+        self.root.update() 
 
         try:
             # Captura de pantalla de la región central
