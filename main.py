@@ -33,7 +33,7 @@ class QuizOverlay:
             fg="#e6edf3", bg="#161b22", wraplength=280, justify="left",
             relief="solid", bd=1
         )
-        self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
+        self.result_label.pack(pady=5, fill="both", expand=True, padx0=10) # wait, leave padx=10
 
     def process_screen(self):
         self.result_label.config(text="🔍 Capturando pantalla...")
@@ -51,7 +51,8 @@ class QuizOverlay:
 
             prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, de forma súper breve."
 
-            max_retries = 3
+            # Reintentos pacientes para lidiar con la saturación del servidor (530/503)
+            max_retries = 5
             answer = ""
             for attempt in range(max_retries):
                 try:
@@ -62,10 +63,11 @@ class QuizOverlay:
                     answer = response.text.strip()
                     break
                 except Exception as api_err:
-                    if "503" in str(api_err) and attempt < max_retries - 1:
-                        self.result_label.config(text=f"⚠️ Servidor ocupado, reintentando... ({attempt + 1})")
+                    err_str = str(api_err)
+                    if ("503" in err_str or "Unavailable" in err_str) and attempt < max_retries - 1:
+                        self.result_label.config(text=f"⚠️ Servidor ocupado, reintentando ({attempt + 1}/{max_retries})...")
                         self.root.update()
-                        time.sleep(1.5)
+                        time.sleep(2.5)  # Espera 2.5 segundos antes de reintentar
                     else:
                         raise api_err
 
