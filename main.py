@@ -1,6 +1,5 @@
 import os
 import tkinter as tk
-import io
 from mss import mss
 from PIL import Image
 from google import genai
@@ -36,27 +35,26 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="🔍 Capturando pantalla...")
+        self.result_label.config(text="⚡ Procesando...")
         self.root.update()
 
         try:
-            # Captura ultra rápida en memoria con mss
+            # Captura ultra rápida
             with mss() as sct:
-                # Captura el monitor principal
                 monitor = sct.monitors[1]
                 sct_img = sct.grab(monitor)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-            self.result_label.config(text="🔍 Analizando con Gemini...")
-            self.root.update()
+            # Reducir tamaño de imagen para velocidad máxima de subida
+            img.thumbnail((1024, 1024))
 
-            prompt = "Lee la pregunta de trivia y las opciones en esta imagen. Responde ÚNICAMENTE con la opción de respuesta correcta, de forma breve y directa."
-            
+            prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, súper breve."
+
+            # Usar modelo ultra veloz
             response = client.models.generate_content(
-                model="gemini-3.8-flash",
+                model="gemini-2.5-flash",
                 contents=[img, prompt],
             )
- 
 
             answer = response.text.strip()
             self.result_label.config(text=f"💡 {answer}")
