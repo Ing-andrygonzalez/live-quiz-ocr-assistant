@@ -1,7 +1,6 @@
 import os
 import tkinter as tk
-from mss import mss
-from PIL import Image
+import pyscreenshot as ImageGrab
 from google import genai
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -35,16 +34,16 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="⚡ Analizando...")
+        self.result_label.config(text="🔍 Capturando pantalla...")
         self.root.update()
 
         try:
-            with mss() as sct:
-                monitor = sct.monitors[1]
-                sct_img = sct.grab(monitor)
-                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-
+            # Captura limpia compatible con Chromebook Linux
+            img = ImageGrab.grab()
             img.thumbnail((1024, 1024))
+
+            self.result_label.config(text="⚡ Analizando...")
+            self.root.update()
 
             prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, de forma súper breve."
 
