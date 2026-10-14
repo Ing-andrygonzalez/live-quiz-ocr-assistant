@@ -1,4 +1,5 @@
 import os
+import time
 import tkinter as tk
 import subprocess
 from PIL import Image
@@ -50,12 +51,25 @@ class QuizOverlay:
 
             prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, de forma súper breve."
 
-            response = client.models.generate_content(
-                model="gemini-3.8-flash",
-                contents=[img, prompt],
-            )
+            # Reintentar automáticamente si hay error 503 de alta demanda
+            max_retries = 3
+            answer = ""
+            for attempt in range(max_retries):
+                try:
+                    response = client.models.generate_content(
+                        model="gemini-3.8-flash",
+                        contents=[img, prompt],
+                    )
+                    answer = response.text.strip()
+                    break
+                except Exception as api_err:
+                    if "503" in str(api_err) and attempt < max_retries - 1:
+                        self.result_label.config(text=f"⚠️ Servidor ocupado, reintentando... ({attempt + 1})")
+                        self.root.update()
+                        time.sleep(1.5)
+                    else:
+                        raise api_err
 
-            answer = response.text.strip()
             self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
