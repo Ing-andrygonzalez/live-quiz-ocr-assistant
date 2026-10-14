@@ -39,7 +39,7 @@ class QuizOverlay:
 
         try:
             # Captura limpia compatible con Chromebook Linux
-            img = ImageGrab.grab()
+            img = ImageGrab.grab(backend="scrot")
             img.thumbnail((1024, 1024))
 
             self.result_label.config(text="⚡ Analizando...")
