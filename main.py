@@ -39,20 +39,9 @@ class QuizOverlay:
         self.root.update()
 
         try:
-            # Captura usando scrot directamente a un archivo temporal
             screenshot_path = "/tmp/screenshot.png"
-            # Ocultamos brevemente la ventana del overlay para que no salga en la foto
-            self.root.withdraw()
-            self.root.update()
-            
-            # Tomar captura con scrot (ignorando errores de bordes)
             subprocess.run(["scrot", "-z", screenshot_path], check=True)
-            
-            # Volver a mostrar la ventana
-            self.root.deiconify()
-            self.root.update()
 
-            # Abrir la imagen capturada
             img = Image.open(screenshot_path)
             img.thumbnail((1024, 1024))
 
@@ -70,7 +59,6 @@ class QuizOverlay:
             self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
-            self.root.deiconify()
             self.result_label.config(text=f"⚠️ Error: {str(e)}")
 
 if __name__ == "__main__":
