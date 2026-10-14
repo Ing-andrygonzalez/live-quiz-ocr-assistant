@@ -13,18 +13,15 @@ class QuizOverlay:
         self.root = root
         self.root.title("Live Quiz AI Overlay")
 
-        # Configuración de ventana flotante (pequeña y siempre arriba)
-        self.root.geometry("320x200+20+50")
+        self.root.geometry("320x220+20+50")
         self.root.wm_attributes("-topmost", True)
         self.root.config(bg="#0b0e11")
 
-        # Título
         self.title_label = tk.Label(
             root, text="⚡ Quiz Assistant (Gemini)", font=("Arial", 11, "bold"), fg="#00ffcc", bg="#0b0e11"
         )
         self.title_label.pack(pady=5)
 
-        # Botón para capturar y resolver
         self.solve_btn = tk.Button(
             root, text="⚡ RESOLVER PANTALLA", font=("Arial", 10, "bold"),
             bg="#1f6feb", fg="white", activebackground="#388bfd",
@@ -32,7 +29,6 @@ class QuizOverlay:
         )
         self.solve_btn.pack(pady=5, fill="x", padx=15)
 
-        # Área de respuesta
         self.result_label = tk.Label(
             root, text="Esperando captura...", font=("Arial", 10),
             fg="#e6edf3", bg="#161b22", wraplength=280, justify="left",
@@ -41,21 +37,24 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="🔍 Leyendo pantalla y analizando...")
-        self.root.update() 
+        self.result_label.config(text="🔍 Analizando pantalla...")
+        self.root.update()
 
         try:
-            # Captura de TODA la pantalla en lugar de una región limitada
+            # Captura de pantalla completa usando el monitor 0 o 1
             with mss.mss() as sct:
-                monitor = sct.monitors[1]
-                sct_img = sct.grab(monitor)
+                # Intentamos capturar el monitor principal
+                sct_img = sct.grab(sct.monitors[0])
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-            # OCR: Extraer texto con Tesseract
-            text = pytesseract.image_to_string(img, lang="spa+eng").strip()
+            # OCR: Extraer texto con Tesseract (usando solo 'eng' por compatibilidad)
+            text = pytesseract.image_to_string(img, lang="eng").strip()
+            
+            # Imprimir en la terminal para que veas qué leyó OCR
+            print(f"--- TEXTO DETECTADO POR OCR ---\n{text}\n------------------------------")
 
-            if not text or len(text) < 5:
-                self.result_label.config(text="❌ No se detectó texto claro.")
+            if not text or len(text) < 3:
+                self.result_label.config(text="❌ No se detectó texto. Revisa la terminal.")
                 return
 
             # Consulta a la IA de Gemini
@@ -70,7 +69,8 @@ class QuizOverlay:
             self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
-            self.result_label.config(text=f"⚠️ Error: {str(e)}")
+            print(f"Error detallado: {str(e)}")
+            self.result_label.config(text=f"⚠️ Error: Revisa la terminal")
 
 if __name__ == "__main__":
     root = tk.Tk()
