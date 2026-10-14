@@ -1,6 +1,6 @@
 import os
 import tkinter as tk
-from PIL import Image
+import pyscreenshot as ImageGrab
 from google import genai
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -34,17 +34,17 @@ class QuizOverlay:
         self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
     def process_screen(self):
-        self.result_label.config(text="🔍 Analizando pantalla con visión IA...")
+        self.result_label.config(text="🔍 Capturando pantalla...")
         self.root.update()
 
         try:
-            # 1. Capturar pantalla con scrot
-            os.system("scrot -f /tmp/screen_capture.png")
-            
-            # 2. Abrir la imagen capturada
-            img = Image.open("/tmp/screen_capture.png")
+            # Capturar pantalla completa directamente con Python
+            img = ImageGrab.grab()
 
-            # 3. Enviar la imagen directamente a Gemini
+            self.result_label.config(text="🔍 Analizando con Gemini...")
+            self.root.update()
+
+            # Enviar la imagen directamente a Gemini 2.5 Flash
             prompt = "Lee la pregunta de trivia y las opciones en esta imagen. Responde ÚNICAMENTE con la opción de respuesta correcta, de forma breve y directa."
             
             response = client.models.generate_content(
