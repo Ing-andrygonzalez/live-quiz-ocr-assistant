@@ -1,6 +1,8 @@
 import os
 import tkinter as tk
-import pyscreenshot as ImageGrab
+import io
+from mss import mss
+from PIL import Image
 from google import genai
 
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -38,7 +40,12 @@ class QuizOverlay:
         self.root.update()
 
         try:
-            img = ImageGrab.grab()
+            # Captura ultra rápida en memoria con mss
+            with mss() as sct:
+                # Captura el monitor principal
+                monitor = sct.monitors[1]
+                sct_img = sct.grab(monitor)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
             self.result_label.config(text="🔍 Analizando con Gemini...")
             self.root.update()
