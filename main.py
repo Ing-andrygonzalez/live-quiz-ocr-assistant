@@ -38,13 +38,11 @@ class QuizOverlay:
         self.root.update()
 
         try:
-            # Captura directa en memoria con pyscreenshot
             img = ImageGrab.grab()
 
             self.result_label.config(text="🔍 Analizando con Gemini...")
             self.root.update()
 
-            # Enviar la imagen a Gemini 2.5 Flash
             prompt = "Lee la pregunta de trivia y las opciones en esta imagen. Responde ÚNICAMENTE con la opción de respuesta correcta, de forma breve y directa."
             
             response = client.models.generate_content(
