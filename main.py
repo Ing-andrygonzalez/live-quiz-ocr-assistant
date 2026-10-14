@@ -53,9 +53,10 @@ class QuizOverlay:
             prompt = "Lee la pregunta de trivia y las opciones en esta imagen. Responde ÚNICAMENTE con la opción de respuesta correcta, de forma breve y directa."
             
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=[img, prompt],
             )
+ 
 
             answer = response.text.strip()
             self.result_label.config(text=f"💡 {answer}")
