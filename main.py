@@ -3,112 +3,80 @@ import tkinter as tk
 import mss
 import pytesseract
 from PIL import Image
-from openai import OpenAI
+from google import genai
 
-# Inicializar cliente de OpenAI (asegúrate de tener tu API key configurada en las variables de entorno de Linux)
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+# Inicializar cliente de Google Gemini
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 class QuizOverlay:
-
     def __init__(self, root):
         self.root = root
         self.root.title("Live Quiz AI Overlay")
 
-        # Configuración de ventana flotante lateral (pequeña y siempre arriba)
-        # Dimensiones: 300x180, posicionada en una esquina de la pantalla
-        self.root.geometry("300x180+20+50")
+        # Configuración de ventana flotante (pequeña y siempre arriba)
+        self.root.geometry("320x200+20+50")
         self.root.wm_attributes("-topmost", True)
-        self.root.config(bg="#0b0e11")  # Estilo oscuro profesional
+        self.root.config(bg="#0b0e11")
 
-        # Título del panel
-        self.lbl_header = tk.Label(
-            root,
-            text="🤖 LIVE QUIZ ASSISTANT",
-            font=("Arial", 10, "bold"),
-            fg="#f0b90b",
-            bg="#0b0e11",
+        # Título
+        self.title_label = tk.Label(
+            root, text="⚡ Quiz Assistant (Gemini)", font=("Arial", 11, "bold"), fg="#00ffcc", bg="#0b0e11"
         )
-        self.lbl_header.pack(pady=5)
+        self.title_label.pack(pady=5)
 
-        # Campo donde saldrá la respuesta ganadora en grande
-        self.lbl_result = tk.Label(
-            root,
-            text="ESPERANDO PREGUNTA...",
-            font=("Arial", 12, "bold"),
-            fg="#ffffff",
-            bg="#181a20",
-            wraplength=280,
-            justify="center",
-            relief="solid",
-            bd=1,
+        # Botón para capturar y resolver
+        self.solve_btn = tk.Button(
+            root, text="⚡ RESOLVER PANTALLA", font=("Arial", 10, "bold"),
+            bg="#1f6feb", fg="white", activebackground="#388bfd",
+            command=self.process_screen
         )
-        self.lbl_result.pack(pady=5, padx=10, fill="both", expand=True)
+        self.solve_btn.pack(pady=5, fill="x", padx=15)
 
-        # Botón de disparo rápido
-        self.btn_solve = tk.Button(
-            root,
-            text="⚡ RESOLVER PANTALLA",
-            font=("Arial", 10, "bold"),
-            bg="#f0b90b",
-            fg="#000000",
-            command=self.analyze_quiz,
+        # Área de respuesta
+        self.result_label = tk.Label(
+            root, text="Esperando captura...", font=("Arial", 10),
+            fg="#e6edf3", bg="#161b22", wraplength=280, justify="left",
+            relief="solid", bd=1
         )
-        self.btn_solve.pack(pady=8)
+        self.result_label.pack(pady=5, fill="both", expand=True, padx=10)
 
-    def analyze_quiz(self):
-        self.lbl_result.config(text="Leyendo y pensando...", fg="#f0b90b")
+    def process_screen(self):
+        self.result_label.config(text="🔍 Leyendo pantalla y analizando...")
         self.root.update()
 
         try:
-            # 1. Capturar el área de la pantalla donde tienes el navegador con las preguntas
+            # Captura de pantalla de la región central
             with mss.mss() as sct:
-                # Coordenadas ajustables según donde ubiques tu ventana en el Chromebook
-                monitor = {"top": 100, "left": 100, "width": 800, "height": 600}
-                screenshot = sct.grab(monitor)
-                img = Image.frombytes(
-                    "RGB", screenshot.size, screenshot.bgra, "raw", "BGRX"
-                )
+                monitor = sct.monitors[1]
+                region = {
+                    "top": int(monitor["height"] * 0.15),
+                    "left": int(monitor["width"] * 0.15),
+                    "width": int(monitor["width"] * 0.70),
+                    "height": int(monitor["height"] * 0.70)
+                }
+                sct_img = sct.grab(region)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
 
-            # 2. Extraer texto con OCR
-            extracted_text = pytesseract.image_to_string(img, lang="eng")
+            # OCR: Extraer texto con Tesseract
+            text = pytesseract.image_to_string(img, lang="spa+eng").strip()
 
-            if not extracted_text.strip():
-                self.lbl_result.config(
-                    text="No se detectó texto en la zona", fg="#ed4b9e"
-                )
+            if not text or len(text) < 5:
+                self.result_label.config(text="❌ No se detectó texto claro.")
                 return
 
-            # 3. Prompt optimizado para la IA (Devuelve el color/forma y la opción correcta)
-            prompt = f"""
-            You are a hyper-fast quiz solver for live trivia events.
-            Analyze the following text extracted from the game. Identify the question and the correct option (Red triangle, Blue diamond, Yellow circle, or Green square).
+            # Consulta a la IA de Gemini
+            prompt = f"Analiza esta pregunta de trivia u opción múltiple y dame ÚNICAMENTE la respuesta correcta de forma directa y concisa:\n\n{text}"
             
-            Extracted text:
-            {extracted_text}
-
-            Respond strictly in this concise format (Spanish):
-            [Color/Figura] - [Texto corto de la respuesta]
-            Example: 🔺 Rojo - Your seed phrase
-            """
-
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=40,
-                temperature=0.1,
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
             )
 
-            answer = response.choices[0].message.content.strip()
-
-            # 4. Mostrar respuesta ganadora en el overlay lateral
-            self.lbl_result.config(text=answer, fg="#0ecb81")
+            answer = response.text.strip()
+            self.result_label.config(text=f"💡 {answer}")
 
         except Exception as e:
-            self.lbl_result.config(
-                text=f"Error: {str(e)[:30]}...", fg="#ed4b9e"
-            )
-
+            self.result_label.config(text=f"⚠️ Error: {str(e)}")
 
 if __name__ == "__main__":
     root = tk.Tk()
