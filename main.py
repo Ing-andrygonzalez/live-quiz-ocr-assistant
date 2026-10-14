@@ -51,13 +51,12 @@ class QuizOverlay:
 
             prompt = "Lee la pregunta de trivia y opciones en la imagen. Responde SOLO con el texto de la opción correcta, de forma súper breve."
 
-            # Reintentar automáticamente si hay error 503 de alta demanda
             max_retries = 3
             answer = ""
             for attempt in range(max_retries):
                 try:
                     response = client.models.generate_content(
-                        model="gemini-3.8-flash",
+                        model="gemini-1.5-flash",
                         contents=[img, prompt],
                     )
                     answer = response.text.strip()
